@@ -1,48 +1,28 @@
 import React, { Component } from "react";
-import axios from "axios";
+import { connect } from "react-redux";
+import * as actionCreators from "./store/actions";
+import { withRouter } from "react-router-dom";
 
 // Components
 import BookTable from "./BookTable";
 import Loading from "./Loading";
 
-const instance = axios.create({
-  baseURL: "https://the-index-api.herokuapp.com"
-});
-
 class AuthorDetail extends Component {
-  state = {
-    author: null,
-    loading: true
-  };
-
   componentDidMount() {
-    this.getAuthor();
+    this.props.fetchAuthorDetail(this.props.match.params.authorID);
   }
 
   componentDidUpdate(prevProps) {
     if (prevProps.match.params.authorID !== this.props.match.params.authorID) {
-      this.getAuthor();
+      this.props.fetchAuthorDetail(this.props.match.params.authorID);
     }
   }
 
-  getAuthor = async () => {
-    const authorID = this.props.match.params.authorID;
-    this.setState({ loading: true });
-
-    try {
-      const res = await instance.get(`/api/authors/${authorID}`);
-      const author = res.data;
-      this.setState({ author: author, loading: false });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   render() {
-    if (this.state.loading) {
+    if (this.props.loading) {
       return <Loading />;
     } else {
-      const author = this.state.author;
+      const author = this.props.author;
       const authorName = `${author.first_name} ${author.last_name}`;
       return (
         <div className="author">
@@ -60,5 +40,24 @@ class AuthorDetail extends Component {
     }
   }
 }
+const mapStateToProps = state => {
+  return {
+    author: state.authorR.author,
+    loading: state.authorR.loading
+  };
+};
 
-export default AuthorDetail;
+const mapDispatchToProps = dispatch => {
+  return {
+    fetchAllAuthors: () => dispatch(actionCreators.fetchAuthors()),
+    fetchAuthorDetail: authorID =>
+      dispatch(actionCreators.fetchAuthorDetail(authorID))
+  };
+};
+
+export default withRouter(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )(AuthorDetail)
+);
